@@ -111,7 +111,8 @@ impl Service {
             .lock()
             .expect("Mutex failure in credential store: please report a bug");
         let item = Item::new(&ss, path.clone());
-        item.set_secret(secret, "text/plain").map_err(decode_error)
+        item.set_secret(secret, "application/octet-stream")
+            .map_err(decode_error)
     }
 
     /// Given an existing item's path, retrieve its secret.
