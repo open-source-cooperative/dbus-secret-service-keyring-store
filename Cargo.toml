@@ -9,7 +9,7 @@ rust-version = "1.88"
 exclude = [".github/"]
 readme = "README.md"
 name = "dbus-secret-service-keyring-store"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 
 [features]
@@ -18,12 +18,12 @@ crypto-openssl = ["dbus-secret-service/crypto-openssl"]
 vendored = ["dbus-secret-service/vendored"]
 
 [dependencies]
-dbus-secret-service = { version = "4.1" }
-keyring-core = { version = "1" }
+dbus-secret-service = "4.1"
+keyring-core = "1"
 
 [dev-dependencies]
-fastrand = "2.4"
-regex = "1.12"
+fastrand = "2"
+regex = "1"
 sscanf = "0.5"
 
 [package.metadata.docs.rs]
