@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Once};
+use std::time::Duration;
 
-use super::{Store, cred::Specifier};
+use super::{Store, cred::Specifier, store::parse_configuration};
 use crate::cred::Wrapper;
 use keyring_core::{CredentialStore, Entry, Error, api::CredentialPersistence, get_default_store};
 
@@ -447,4 +448,43 @@ fn test_persistence() {
         store.persistence(),
         CredentialPersistence::UntilDelete
     ));
+}
+
+#[test]
+fn test_parse_configuration() {
+    let parse = |pairs: &[(&str, &str)]| parse_configuration(&pairs.iter().copied().collect());
+    assert!(matches!(parse(&[]), Ok(None)));
+    for (value, seconds) in [("1", 1), ("5", 5)] {
+        assert!(matches!(
+            parse(&[("connect-timeout", value)]),
+            Ok(Some(t)) if t == Duration::from_secs(seconds)
+        ));
+    }
+    for bad in ["", "0", "-1", "1.5", "abc", "18446744073709551616"] {
+        assert!(
+            matches!(
+                parse(&[("connect-timeout", bad)]),
+                Err(Error::Invalid(key, _)) if key == "connect-timeout"
+            ),
+            "value {bad:?} should be rejected"
+        );
+    }
+    for pairs in [
+        &[("connect_timeout", "5")][..],
+        &[("connect-timeout", "0"), ("anything", "anything")][..],
+    ] {
+        assert!(
+            matches!(parse(pairs), Err(Error::NotSupportedByStore(_))),
+            "{pairs:?} should not be supported"
+        );
+    }
+}
+
+#[test]
+fn test_connect_timeout_with_real_bus() {
+    let config = HashMap::from([("connect-timeout", "5")]);
+    let store: Arc<CredentialStore> = Store::new_with_configuration(&config).unwrap();
+    let name = generate_random_string();
+    let entry = store.build(&name, &name, None).unwrap();
+    test_round_trip("connect-timeout store", &entry, "connect-timeout");
 }

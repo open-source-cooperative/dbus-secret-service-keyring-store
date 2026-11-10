@@ -12,6 +12,7 @@ compile_error!("You must enable one of the features crypto-rust or crypto-openss
 
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::time::Duration;
 
 use crate::errors::{decode_error, platform_failure};
 use dbus_secret_service::{EncryptionType, Item, Path, SecretService};
@@ -22,9 +23,13 @@ pub(crate) struct Service {
 }
 
 impl Service {
-    pub(crate) fn new() -> Result<Self> {
+    pub(crate) fn new(connect_timeout: Option<Duration>) -> Result<Self> {
+        let ss = match connect_timeout {
+            None => SecretService::connect(EncryptionType::Dh),
+            Some(t) => SecretService::connect_with_connection_timeout(EncryptionType::Dh, t),
+        };
         Ok(Self {
-            ss: Mutex::new(SecretService::connect(EncryptionType::Dh).map_err(platform_failure)?),
+            ss: Mutex::new(ss.map_err(platform_failure)?),
         })
     }
 
