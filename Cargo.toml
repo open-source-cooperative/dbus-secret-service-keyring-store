@@ -18,7 +18,7 @@ crypto-openssl = ["dbus-secret-service/crypto-openssl"]
 vendored = ["dbus-secret-service/vendored"]
 
 [dependencies]
-dbus-secret-service = "4.1"
+dbus-secret-service = "4.2"
 keyring-core = "1"
 
 [dev-dependencies]
