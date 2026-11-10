@@ -32,3 +32,8 @@ unreachable_pub = "warn"
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 features = ["crypto-rust"]
+
+# Temporary: dbus-secret-service 4.2 is not on crates.io yet.
+# Remove this section (drop this commit) once it is released.
+[patch.crates-io]
+dbus-secret-service = { git = "https://github.com/Brooooooklyn/dbus-secret-service", branch = "bounded-session-connect" }
