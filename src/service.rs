@@ -17,6 +17,12 @@ use crate::errors::{decode_error, platform_failure};
 use dbus_secret_service::{EncryptionType, Item, Path, SecretService};
 use keyring_core::{Error, Result};
 
+/// The default content type of passwords; see the crate docs on content types.
+pub(crate) const TEXT: &str = "text/plain";
+
+/// The default content type of secrets; see the crate docs on content types.
+pub(crate) const BINARY: &str = "application/octet-stream";
+
 pub(crate) struct Service {
     ss: Mutex<SecretService>,
 }
@@ -56,6 +62,7 @@ impl Service {
         label: &str,
         attributes: HashMap<&str, &str>,
         secret: &[u8],
+        content_type: &str,
     ) -> Result<()> {
         let ss = self
             .ss
@@ -72,7 +79,7 @@ impl Service {
                 attributes,
                 secret,
                 true, // replace
-                "application/octet-stream",
+                content_type,
             )
             .map_err(platform_failure)?;
         Ok(())
@@ -105,14 +112,40 @@ impl Service {
     }
 
     /// Given an item's path, set its secret.
-    pub(crate) fn set_secret(&self, path: &Path<'static>, secret: &[u8]) -> Result<()> {
+    pub(crate) fn set_secret(
+        &self,
+        path: &Path<'static>,
+        secret: &[u8],
+        content_type: &str,
+    ) -> Result<()> {
         let ss = self
             .ss
             .lock()
             .expect("Mutex failure in credential store: please report a bug");
         let item = Item::new(&ss, path.clone());
-        item.set_secret(secret, "application/octet-stream")
-            .map_err(decode_error)
+        item.set_secret(secret, content_type).map_err(decode_error)
+    }
+
+    /// Given an existing item's path, retrieve the content type of its secret.
+    pub(crate) fn get_content_type(&self, path: &Path<'static>) -> Result<String> {
+        let ss = self
+            .ss
+            .lock()
+            .expect("Mutex failure in credential store: please report a bug");
+        let item = Item::new(&ss, path.clone());
+        item.get_secret_content_type().map_err(decode_error)
+    }
+
+    /// Given an existing item's path, store its secret again with the given
+    /// content type.
+    pub(crate) fn set_content_type(&self, path: &Path<'static>, content_type: &str) -> Result<()> {
+        let ss = self
+            .ss
+            .lock()
+            .expect("Mutex failure in credential store: please report a bug");
+        let item = Item::new(&ss, path.clone());
+        let secret = item.get_secret().map_err(decode_error)?;
+        item.set_secret(&secret, content_type).map_err(decode_error)
     }
 
     /// Given an existing item's path, retrieve its secret.
